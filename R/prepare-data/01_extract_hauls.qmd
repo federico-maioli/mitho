@@ -1,0 +1,72 @@
+---
+title: "01_extract_hauls"
+author: "Federico Maioli"
+format: html
+editor: visual
+---
+
+# Intro
+
+This script is for extracting the haul IDs, position etc. from FISHGLOB <https://github.com/AquaAuma/FishGlob_data/tree/main>
+
+## Libraries
+
+```{r}
+#| message: false
+library(tidylog)
+library(tidyverse)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(here)
+```
+
+## Load data
+
+According to <https://github.com/AquaAuma/FishGlob_data/issues/49> it's best to use Rdata instead of CSVs
+
+```{r}
+#| cache: true
+load(here('FishGlob_data/outputs/Compiled_data/FishGlob_public_std_clean.RData'))
+```
+
+## Get only relevant columns
+
+Here ideally a unique ID for each haul for backmatching
+
+```{r}
+unique_hauls = data |> dplyr::distinct(haul_id,survey,source,country,continent,year,month,day,quarter,latitude,longitude,gear,depth)
+```
+
+# Some checks 
+
+## List of countries
+```{r}
+unique(unique_hauls$country)
+```
+
+## Haul position
+```{r}
+# get global map
+map_data = rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+# cut for range fishglob
+# map_data = suppressWarnings(suppressMessages(sf::st_crop(
+#   map_data, c(
+#     xmin = min(unique_hauls$longitude),
+#     ymin = min(unique_hauls$latitude),
+#     xmax = max(unique_hauls$longitude),
+#     ymax = max(unique_hauls$latitude)
+#   )
+# )))
+
+ggplot(map_data) + geom_sf()+ geom_point(data=unique_hauls,aes(x=longitude,y=latitude)) +  ylim(min(unique_hauls$latitude),max(unique_hauls$latitude))+theme_light()
+```
+
+
+## Save the hauls for matching with the environmental covariates
+```{r}
+saveRDS(unique_hauls,here('data/unique_haul.rds'))
+```
+
+
+
