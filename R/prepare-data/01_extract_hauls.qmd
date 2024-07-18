@@ -1,7 +1,9 @@
 ---
 title: "01_extract_hauls"
 author: "Federico Maioli"
-format: html
+format: 
+  html:
+   keep_md: true
 editor: visual
 ---
 
@@ -38,14 +40,16 @@ Here ideally a unique ID for each haul for backmatching
 unique_hauls = data |> dplyr::distinct(haul_id,survey,source,country,continent,year,month,day,quarter,latitude,longitude,gear,depth)
 ```
 
-# Some checks 
+# Some checks
 
 ## List of countries
+
 ```{r}
 unique(unique_hauls$country)
 ```
 
 ## Haul position
+
 ```{r}
 # get global map
 map_data = rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
@@ -62,11 +66,8 @@ map_data = rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 ggplot(map_data) + geom_sf()+ geom_point(data=unique_hauls,aes(x=longitude,y=latitude)) +  ylim(min(unique_hauls$latitude),max(unique_hauls$latitude))+theme_light()
 ```
 
-
 ## Save the hauls for matching with the environmental covariates
+
 ```{r}
 saveRDS(unique_hauls,here('data/unique_haul.rds'))
 ```
-
-
-

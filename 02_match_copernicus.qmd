@@ -1,0 +1,74 @@
+---
+title: "02_match_copernicus"
+format: html
+editor: visual
+---
+
+## Intro
+
+This script is for matching environmental covariates from Copernicus with the haul data
+
+## Libraries
+
+```{r}
+#| message: false
+library(tidylog)
+library(tidyverse)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(here)
+library(terra)
+```
+
+
+
+## Read hauls data
+```{r}
+data=readRDS('data/unique_haul.rds')
+```
+
+## Read the Copernicus credentials from a file
+
+```{r}
+lines <- readLines('personal/copernicus_credentials.txt')
+
+# Extract the username and password
+username <- sub("username: ", "", lines[1])
+password <- sub("password: ", "", lines[2])
+```
+
+## Depth
+
+Depth from GEBCO - 15 arc seconds resolution. Around 0.3 km at 45 Lat
+
+```{r}
+depth_raster = terra::rast('data/enviroment/depth/gebco/GEBCO_2023_sub_ice_topo.nc')
+
+data$depth_gebco <- terra::extract(depth_raster$elevation, data %>% dplyr::select(longitude, latitude))$elevation# extract depth
+
+data$depth_gebco=abs(data$depth_gebco)# convert to abs
+
+data |> ggplot(aes(longitude,latitude,color=log(depth_gebco)))+geom_point()+scale_color_viridis_c() #plot
+
+# check differences with provided depth
+plot(data$depth,data$depth_gebco)
+
+# where is the difference bigger?
+
+# small differences
+data |> mutate(diff_depth= depth-depth_gebco) |> filter(diff_depth %in% c(-30:30)) |>  ggplot(aes(longitude,latitude,color=diff_depth))+geom_point()+scale_color_viridis_c() 
+
+# huge differences
+data |> mutate(diff_depth= depth-depth_gebco) |> filter(!diff_depth %in% c(-100:100)) |>  ggplot(aes(longitude,latitude,color=diff_depth))+geom_point()+scale_color_viridis_c(trans='pseudo_log')
+
+
+
+
+
+
+
+write_csv(data,'data/fish_glob/hauls.csv')
+```
+
+
