@@ -6,3 +6,5 @@
 .DS_Store
 /personal
 /environment
+*_cache/
+*_files/
